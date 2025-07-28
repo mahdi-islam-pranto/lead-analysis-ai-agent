@@ -1,11 +1,13 @@
 from langchain.prompts import ChatPromptTemplate
 from langchain_openai import ChatOpenAI
+from langchain_huggingface import ChatHuggingFace, HuggingFaceEndpoint
+from pydantic import BaseModel, Field
 from dotenv import load_dotenv
 load_dotenv()
 
 
 
-prompt = ChatPromptTemplate.from_messages([
+prompt_template = ChatPromptTemplate.from_messages([
     ("system", """
 You are an AI Lead Scorer tool designed to analyze lead data and assign a score between 1 and 100 based on multiple relevant factors. The highest possible score is 100.
 
@@ -21,7 +23,7 @@ Given detailed lead data including fields such as Company Name, Website, Faceboo
 4. **Facebook Activity:** Score based on the number of posts in the last 7 days; 0 posts is lowest, 20+ posts is highest score.
 5. **Product Type Demand:** Score higher for products with greater consumer demand.
 6. **Gender Type Product:** Give higher scores if products cater to all genders, then men, then women.
-7. **Ads Campaign Activity:** Score based on ads run in last 7 days.
+7. **Ads Campaign Activity:** Score based on ads run in last 7 days. 0 is low score and over 10 is the highest score, scaling accordingly.
 8. **Email Presence:** Assign score if a primary email address is available.
 
 ### For Other Industry Types (e.g., Steel Company):
@@ -53,22 +55,6 @@ Using the above instructions and the provided lead data, reason through each fac
 4. Sum and normalize to 1-100.
 5. Provide detailed scoring breakdown with explanation.
 
-# Output Format
-Return a JSON object containing:
-{
-  "factor_scores": {
-    "website": [score out of X],
-    "facebook_page": [score out of X],
-    "facebook_likes_followers": [score out of X],
-    "facebook_activity": [score out of X],
-    "product_type": [score out of X],
-    "gender_type": [score out of X],
-    "ads_campaign": [score out of X],
-    "email": [score out of X]
-  },
-  "total_score": [integer between 1 and 100],
-  "explanation": "Text explaining how scores were calculated and weighted based on the lead data"
-}
 
 Use clear reasoning before giving scores. Adapt scoring logic dynamically according to Industry Type.
 """),
@@ -110,14 +96,34 @@ lead_details = {
 
 print(lead_details)
 
-# make a llm
-llm = ChatOpenAI(
-    model="gpt-4o",
-    temperature=0.2,
+# define hf llm 
+llm = HuggingFaceEndpoint(
+    repo_id="Qwen/Qwen3-235B-A22B-Thinking-2507",  
+    task="text-generation",
+    verbose=True,
 )
 
-# make a chain
-chain = prompt | llm
+# define chat model
+chat_model = ChatHuggingFace(llm=llm, verbose=True)
 
-response = chain.invoke({"lead_details": lead_details})
-print(response.content)
+# make a openai llm
+# llm = ChatOpenAI(
+#     model="gpt-4o",
+#     temperature=0.2,
+# )
+
+# pydantic model for output
+
+class LeadScore(BaseModel):
+    factor_scores: dict[str, int] = Field(..., description="Dictionary of scores for each factor. Key is the factor name and value is the score (out of x).")
+    total_score: int = Field(..., description="Total score for the lead. (out of 100 = sum of all factor scores)")
+    explanation: str = Field(..., description="Explanation of how the scores were calculated")
+
+# convert pydantic class to json schema
+output_json_schema = LeadScore.model_json_schema()
+
+#response with structure
+response_with_sturcture = chat_model.with_structured_output(output_json_schema)
+
+result = response_with_sturcture.invoke(prompt_template.invoke({"lead_details": lead_details}))
+print(result)
