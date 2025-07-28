@@ -58,8 +58,3 @@ def lead_analysis(get_lead_analysis: str = "lead_page.html"):
     return {"lead_history": lead_history_text,
             "lead analysis": ai_analysis            
             }
-
-
-
-    
-    

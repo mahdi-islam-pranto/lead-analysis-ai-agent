@@ -1,0 +1,123 @@
+from langchain.prompts import ChatPromptTemplate
+from langchain_openai import ChatOpenAI
+from dotenv import load_dotenv
+load_dotenv()
+
+
+
+prompt = ChatPromptTemplate.from_messages([
+    ("system", """
+You are an AI Lead Scorer tool designed to analyze lead data and assign a score between 1 and 100 based on multiple relevant factors. The highest possible score is 100.
+
+Given detailed lead data including fields such as Company Name, Website, Facebook Page, Facebook Likes and Followers, Recent Facebook Posts and Ads, Product Type, Gender Type Product, Contact Information, Industry Type, Lead Source, and others, your task is to compute a final lead score that reflects the quality and potential of the lead.
+
+## Scoring Instructions:
+- **Industry Type is the primary context:** Your scoring strategy must adapt according to the lead's Industry Type.
+
+### For Industry Type "Ecommerce":
+1. **Website Presence:** Assign a score if the lead has a website.
+2. **Facebook Page Presence:** Assign a score if the lead has a Facebook page.
+3. **Facebook Likes and Followers:** Score based on the number of Facebook page likes and followers; below 10,000 is low score and over 100,000 is the highest score, scaling accordingly.
+4. **Facebook Activity:** Score based on the number of posts in the last 7 days; 0 posts is lowest, 20+ posts is highest score.
+5. **Product Type Demand:** Score higher for products with greater consumer demand.
+6. **Gender Type Product:** Give higher scores if products cater to all genders, then men, then women.
+7. **Ads Campaign Activity:** Score based on ads run in last 7 days.
+8. **Email Presence:** Assign score if a primary email address is available.
+
+### For Other Industry Types (e.g., Steel Company):
+- Adjust the importance and scoring weights of these factors accordingly. For example, social media presence and activity may have less impact and other factors may become more relevant.
+
+## Scoring Methodology:
+- For each relevant factor, assign a sub-score according to its importance and criteria above.
+- Sum all sub-scores, then normalize or scale the total to a final score between 1 and 100.
+
+## Task:
+Using the above instructions and the provided lead data, reason through each factor step-by-step considering the Industry Type and other relevant fields. Then, compute and provide:
+
+- The individual scores per factor
+- The aggregated total score (1 to 100)
+- A short explanation of how the scores were assigned
+
+
+# Steps
+1. Identify Industry Type.
+2. For Ecommerce:
+- Check website presence and assign score.
+- Evaluate Facebook Page presence and followers, assign score.
+- Assess Facebook activity in last 7 days for scoring.
+- Analyze product type for consumer demand.
+- Evaluate gender type for product appeal.
+- Check for recent ads campaigns.
+- Verify email availability.
+3. Adjust factor weights if Industry Type differs.
+4. Sum and normalize to 1-100.
+5. Provide detailed scoring breakdown with explanation.
+
+# Output Format
+Return a JSON object containing:
+{
+  "factor_scores": {
+    "website": [score out of X],
+    "facebook_page": [score out of X],
+    "facebook_likes_followers": [score out of X],
+    "facebook_activity": [score out of X],
+    "product_type": [score out of X],
+    "gender_type": [score out of X],
+    "ads_campaign": [score out of X],
+    "email": [score out of X]
+  },
+  "total_score": [integer between 1 and 100],
+  "explanation": "Text explaining how scores were calculated and weighted based on the lead data"
+}
+
+Use clear reasoning before giving scores. Adapt scoring logic dynamically according to Industry Type.
+"""),
+
+("user", """ Here is the lead data:
+{lead_details}
+Now calculate the score.
+""")
+    
+])
+
+
+lead_details = {
+    "Company Name" : "Virgo",
+    "website" : "https://www.virgo.com/",
+    "Facebook Page": "https://www.facebook.com/virgoretail",
+    "Facebook Page Like" : "100000+",
+    "Facebook Followers" : "100000+",
+    "Last 7 day Post" : "20+",
+    "Product Type": "Man and Women Dress",
+    "Gender Type Product":  "ALL",
+    "Last 7 day Ads" : "0",
+    "Contact Name": "",
+    "Contact Number": "01960888999",
+    "Primary Email" : "virgoretailbd@gmail.com",
+    "Industry Type" : "Ecommerce",
+    "Owner" : "Abdur Rahman Emon",
+    "Associate": "Azizul Hakim",
+    "lead source": "Facebook",
+    "lead pipeline": "New Lead",
+    "lead rating" : "A Category",
+    "Lead Area": "Rampura",
+    "District" : "Dhaka",
+    "Address" : "Plot 67, Level 3-5; DIT Road, East Hazipara, Rampura, Dhaka, Bangladesh",
+    "Amount" : "",
+    "remarks" : ""
+}
+
+
+print(lead_details)
+
+# make a llm
+llm = ChatOpenAI(
+    model="gpt-4o",
+    temperature=0.2,
+)
+
+# make a chain
+chain = prompt | llm
+
+response = chain.invoke({"lead_details": lead_details})
+print(response.content)

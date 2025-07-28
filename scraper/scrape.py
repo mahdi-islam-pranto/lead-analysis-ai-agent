@@ -12,7 +12,7 @@ soup = BeautifulSoup(html_content, 'html.parser')
 history_data = soup.find('div', {'id': 'historyData'})
 
 # get the all text content of the history data div
-all_div_text_content = history_data.get_text(strip=True)
+# all_div_text_content = history_data.get_text(strip=True)
 
 # get all the divs with class row
 history_divs = history_data.find_all('div', {'class': 'row'})
