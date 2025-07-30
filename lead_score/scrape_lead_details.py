@@ -6,7 +6,6 @@ from dotenv import load_dotenv
 load_dotenv()
 
 
-
 prompt_template = ChatPromptTemplate.from_messages([
     ("system", """
 You are an AI Lead Scorer tool designed to analyze lead data and assign a score between 1 and 100 based on multiple relevant factors. The highest possible score is 100.
@@ -67,14 +66,41 @@ Now calculate the score.
 ])
 
 
+# lead_details = {
+#     "Company Name" : "Virgo",
+#     "website" : "https://www.virgo.com/",
+#     "Facebook Page": "https://www.facebook.com/virgoretail",
+#     "Facebook Page Like" : "100000+",
+#     "Facebook Followers" : "100000+",
+#     "Last 7 day Post" : "20+",
+#     "Product Type": "Man and Women Dress",
+#     "Gender Type Product":  "ALL",
+#     "Last 7 day Ads" : "0",
+#     "Contact Name": "",
+#     "Contact Number": "01960888999",
+#     "Primary Email" : "virgoretailbd@gmail.com",
+#     "Industry Type" : "Ecommerce",
+#     "Owner" : "Abdur Rahman Emon",
+#     "Associate": "Azizul Hakim",
+#     "lead source": "Facebook",
+#     "lead pipeline": "New Lead",
+#     "lead rating" : "A Category",
+#     "Lead Area": "Rampura",
+#     "District" : "Dhaka",
+#     "Address" : "Plot 67, Level 3-5; DIT Road, East Hazipara, Rampura, Dhaka, Bangladesh",
+#     "Amount" : "",
+#     "remarks" : ""
+# }
+
+
 lead_details = {
     "Company Name" : "Virgo",
     "website" : "https://www.virgo.com/",
     "Facebook Page": "https://www.facebook.com/virgoretail",
-    "Facebook Page Like" : "100000+",
-    "Facebook Followers" : "100000+",
-    "Last 7 day Post" : "20+",
-    "Product Type": "Man and Women Dress",
+    "Facebook Page Like" : "100",
+    "Facebook Followers" : "1000",
+    "Last 7 day Post" : "2",
+    "Product Type": "Baby Care",
     "Gender Type Product":  "ALL",
     "Last 7 day Ads" : "0",
     "Contact Name": "",
@@ -92,7 +118,6 @@ lead_details = {
     "Amount" : "",
     "remarks" : ""
 }
-
 
 print(lead_details)
 
