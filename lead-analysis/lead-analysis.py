@@ -26,7 +26,6 @@ def scrape_lead_history_data(html_content):
 # scrape_lead_history_data(html_content)
 
 
-
 # define hf llm 
 llm = HuggingFaceEndpoint(
     repo_id="Qwen/Qwen3-235B-A22B-Thinking-2507",  
@@ -59,7 +58,7 @@ Your output should be a clear, concise statement describing the lead's current p
 - If no tasks are due, analyze lead's past interactions and history to recommend the subsequent logical step based on standard CRM and sales best practices. This may include reaching out via specific channels, sending follow-up emails, scheduling meetings, offering promotions, or updating lead status.
 
 Always explain your recommendation with reasoning tied to the lead's data and typical CRM workflows.
-
+The lead history data can in bengali language.too. Try to understand the history data and make a decision.
 # Steps
 
 1. Receive detailed CRM data and interaction history of the lead.
