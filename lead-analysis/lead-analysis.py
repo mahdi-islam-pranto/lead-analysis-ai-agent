@@ -130,12 +130,12 @@ output_json_schema = LLMOutput.model_json_schema()
 chat_model_with_structure = chat_model.with_structured_output(output_json_schema)
 
 # make a chain
-chain = prompt_template | chat_model_with_structure
+chain = prompt_template | chat_model
 
 # get the scraped data and pass it to the chain
 lead_history_content = scrape_lead_history_data(html_content)
 
 ai_respose = chain.invoke({"lead_history_content": lead_history_content})
 
-# print the ai response 
+# print the ai response
 print(ai_respose)
