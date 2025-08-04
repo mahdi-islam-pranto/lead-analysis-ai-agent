@@ -10,7 +10,6 @@ app = FastAPI()
 class Item(BaseModel):
     data: dict
     
-
 @app.post("/leadscore")
 async def root(Item: Item):
 
@@ -83,13 +82,13 @@ Now calculate the score.
     # define chat model
     chat_model = ChatHuggingFace(llm=llm, verbose=True)
 
-# make a openai llm
-# llm = ChatOpenAI(
-#     model="gpt-4o",
-#     temperature=0.2,
-# )
+    # make a openai llm
+    # llm = ChatOpenAI(
+    #     model="gpt-4o",
+    #     temperature=0.2,
+    # )
 
-# pydantic model for output
+    # pydantic model for output
 
     class LeadScore(BaseModel):
         factor_scores: dict[str, int] = Field(..., description="Dictionary of scores for each factor. Key is the factor name and value is the score (out of x).")
