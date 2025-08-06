@@ -1,14 +1,10 @@
 from bs4 import BeautifulSoup
-from fastapi import FastAPI
+from fastapi import FastAPI, UploadFile, File
 from langchain.prompts import ChatPromptTemplate
 from langchain_huggingface import HuggingFaceEndpoint, ChatHuggingFace
 from pydantic import BaseModel, Field
 
 app = FastAPI()
-
-# get the html contect from lead_page.html file
-with open('lead_page3.html', 'r') as f:
-    html_content = f.read()
 
 # scrape data function
 # srape lead history data function
@@ -24,7 +20,6 @@ def scrape_lead_history_data(html_content):
 
     # get all the divs with class row
     history_divs = history_data.find_all('div', {'class': 'row'})
-
 
     # all text content variable
     all_text_content = 'Lead History:\n'
@@ -73,74 +68,90 @@ def scrape_lead_history_data(html_content):
 
 # API end point
 @app.post("/leadanalysis")
-async def create_lead_analysis():
+async def create_lead_analysis(file: UploadFile = File(...)):
     
-    # define hf llm 
-    llm = HuggingFaceEndpoint(
-        repo_id="Qwen/Qwen3-235B-A22B-Thinking-2507",  
-        task="text-generation",
-        # verbose=True,
-    )
+    # Check file extension and content type
+    if not (file.filename.lower().endswith('.html') or file.content_type == 'text/html'):
+        return {"Error": "Uploaded file is not an HTML file"}
+    # try to read Html file
+    # Read uploaded HTML file
+    html_content = await file.read()
+    html_content = html_content.decode('utf-8')
+        
+    
 
-    # define chat model
-    chat_model = ChatHuggingFace(llm=llm, verbose=True)
+    try:
+    
+        # define hf llm 
+        llm = HuggingFaceEndpoint(
+            repo_id="Qwen/Qwen3-235B-A22B-Thinking-2507",  
+            task="text-generation",
+            # verbose=True,
+        )
 
-    # make a prompt template
-    prompt_template = ChatPromptTemplate.from_messages([
-    ("system", """ You are an AI assistant integrated with a CRM system used across various business types. Your tasks are as follows:
-     
-    1. Analyze the lead's history and interaction records in the CRM and generate a short summary about this lead.
+        # define chat model
+        chat_model = ChatHuggingFace(llm=llm, verbose=True)
 
-    2. Determine the *current position* or stage of a lead within the sales or engagement pipeline by analyzing the lead's historical data and interaction records in the CRM. Consider universally applicable factors such as:
-    - Last contact date and type (call, email, meeting)
-    - Stage in the sales funnel (e.g., new, contacted, qualified, proposal sent, negotiation, closed-won, closed-lost)
-    - Response status (responsive, non-responsive)
-    - Lead engagement level (e.g., opened emails, attended meetings)
-    - Number and type of touchpoints
-    - Time elapsed since last significant activity
-    - Interest indicators (e.g., product demos requested, questions asked)
-    - Any pauses or stalls in the process
-    - Deal value or lead priority
+        # make a prompt template
+        prompt_template = ChatPromptTemplate.from_messages([
+        ("system", """ You are an AI assistant integrated with a CRM system used across various business types. Your tasks are as follows:
+        
+        1. Analyze the lead's history and interaction records in the CRM and generate a short summary about this lead.
 
-    Your output should be a clear, concise short statement describing the lead's current position (e.g., "Qualified and awaiting proposal", "Negotiation phase", "Lead unresponsive after initial contact") with supporting justification based on these factors. Justification should be short and to the point.
+        2. Determine the *current position* or stage of a lead within the sales or engagement pipeline by analyzing the lead's historical data and interaction records in the CRM. Consider universally applicable factors such as:
+        - Last contact date and type (call, email, meeting)
+        - Stage in the sales funnel (e.g., new, contacted, qualified, proposal sent, negotiation, closed-won, closed-lost)
+        - Response status (responsive, non-responsive)
+        - Lead engagement level (e.g., opened emails, attended meetings)
+        - Number and type of touchpoints
+        - Time elapsed since last significant activity
+        - Interest indicators (e.g., product demos requested, questions asked)
+        - Any pauses or stalls in the process
+        - Deal value or lead priority
 
-    3. Suggest the *next best action* for engaging the lead, derived from the lead's history and CRM data:
-    - First, check for any tasks, follow-ups, or activities due now or overdue. If such tasks exist, prioritize and suggest completing these.
-    - If no tasks are due, analyze lead's past interactions and history to recommend the subsequent logical step based on standard CRM and sales best practices. This may include reaching out via specific channels, sending follow-up emails, scheduling meetings, offering promotions, or updating lead status.
+        Your output should be a clear, concise short statement describing the lead's current position (e.g., "Qualified and awaiting proposal", "Negotiation phase", "Lead unresponsive after initial contact") with supporting justification based on these factors. Justification should be short and to the point.
 
-    Always explain your recommendation with reasoning tied to the lead's data and typical CRM workflows.
-    The lead history data can in bengali language.too. Try to understand the history data and make a decision. The response should be short and to the point.
-    # Steps
+        3. Suggest the *next best action* for engaging the lead, derived from the lead's history and CRM data:
+        - First, check for any tasks, follow-ups, or activities due now or overdue. If such tasks exist, prioritize and suggest completing these.
+        - If no tasks are due, analyze lead's past interactions and history to recommend the subsequent logical step based on standard CRM and sales best practices. This may include reaching out via specific channels, sending follow-up emails, scheduling meetings, offering promotions, or updating lead status.
 
-    1. Receive detailed CRM data and interaction history of the lead.
-    2. Evaluate the listed factors to conclude the current position of the lead.
-    3. Check for any due or overdue actions.
-    4. Recommend the next best action, providing clear explanations.
-                    """),
-    ("user", " Can you please tell me the summary of the lead in bangla language, the current position of the lead in bangla language and the next best action for the lead in bangla language. Here is the lead's info and history: {lead_history_content}")
-    ])
+        Always explain your recommendation with reasoning tied to the lead's data and typical CRM workflows.
+        The lead history data can in Bangla language too. Try to understand the history data and make a decision. The response should be short and to the point.
+        # Steps
 
-    # pydantic class for the output
-    class LLMOutput(BaseModel):
-        summary: str = Field(..., description="Summary of the lead's history")
-        current_position: str = Field(..., description="Current position of the lead")
-        next_best_action: str = Field(..., description="Next best action for the lead")
+        1. Receive detailed CRM data and interaction history of the lead.
+        2. Evaluate the listed factors to conclude the current position of the lead.
+        3. Check for any due or overdue actions.
+        4. Recommend the next best action, providing clear explanations.
+                        """),
+        ("user", " Can you please tell me the summary of the lead in bangla language, the current position of the lead in bangla language and the next best action for the lead in bangla language. Here is the lead's info and history: {lead_history_content}")
+        ])
+
+        # pydantic class for the output
+        class LLMOutput(BaseModel):
+            summary: str = Field(..., description="Summary of the lead's history")
+            current_position: str = Field(..., description="Current position of the lead")
+            next_best_action: str = Field(..., description="Next best action for the lead")
 
 
-    # convert pydantic class to json schema
-    output_json_schema = LLMOutput.model_json_schema()
-    # make a chat model with structured output
-    chat_model_with_structure = chat_model.with_structured_output(output_json_schema)
+        # convert pydantic class to json schema
+        output_json_schema = LLMOutput.model_json_schema()
+        # make a chat model with structured output
+        chat_model_with_structure = chat_model.with_structured_output(output_json_schema)
 
-    # make a chain
-    chain = prompt_template | chat_model_with_structure
+        # make a chain
+        chain = prompt_template | chat_model_with_structure
 
-    # get the scraped data and pass it to the chain
-    lead_history_content = scrape_lead_history_data(html_content=html_content)
+        # get the scraped data and pass it to the chain
+        lead_history_content = scrape_lead_history_data(html_content=html_content)
 
-    ai_respose = chain.invoke({"lead_history_content": lead_history_content})
+        ai_respose = chain.invoke({"lead_history_content": lead_history_content})
 
-    # print(history_data)
-    return {"history_data": lead_history_content,
-            "ai_response": ai_respose
-            }
+        # print(history_data)
+        return {"history_data": lead_history_content,
+                "ai_response": ai_respose
+                }
+    except:
+        return {
+            "Error": "Error fetching lead analysis data. Please check the API key"
+        }
