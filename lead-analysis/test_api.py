@@ -4,12 +4,10 @@ from langchain.prompts import ChatPromptTemplate
 from langchain_huggingface import HuggingFaceEndpoint, ChatHuggingFace
 from langchain_openai import ChatOpenAI
 from pydantic import BaseModel, Field
-from dotenv import load_dotenv
-load_dotenv()
 
-app = FastAPI()
 
-# scrape data function
+
+
 # srape lead history data function
 def scrape_lead_history_data(html_content):
     # create a beautiful soup object
@@ -67,38 +65,28 @@ def scrape_lead_history_data(html_content):
     all_text_content_for_lead = lead_info_data_h5 + '\n' + lead_info_data_p_text + '\n' + lead_pipeline_text + '\n'     + all_text_content
     # print(all_text_content_for_lead)
     return all_text_content_for_lead
-    
 
 
-# API end point
-@app.post("/leadanalysis")
-async def create_lead_analysis(file: UploadFile = File(...)):
-    
-    # Check file extension and content type
-    if not (file.filename.lower().endswith('.html') or file.content_type == 'text/html'):
-        return {"Error": "Uploaded file is not an HTML file"}
-    # try to read Html file
-    # Read uploaded HTML file
-    html_content = await file.read()
-    html_content_decoded = html_content.decode('utf-8')
+html_content = open('lead_page2.html', 'rb').read() # File.read()
+html_content_decoded = html_content.decode('utf-8')
             
-    try:
+
     
         # define hf llm 
-        llm = HuggingFaceEndpoint(
+llm = HuggingFaceEndpoint(
             repo_id="Qwen/Qwen3-235B-A22B-Thinking-2507",  
             task="text-generation",
             # verbose=True,
         )
 
         # define chat model
-        chat_model = ChatHuggingFace(llm=llm, verbose=True)
+chat_model = ChatHuggingFace(llm=llm, verbose=True)
 
         # alternative chat model openai
-        chat_model_openai = ChatOpenAI(model="gpt-4o-mini", temperature=0.2)
+chat_model_openai = ChatOpenAI(model="gpt-3.5-turbo", temperature=0.2)
 
         # make a prompt template
-        prompt_template = ChatPromptTemplate.from_messages([
+prompt_template = ChatPromptTemplate.from_messages([
         ("system", """ You are an AI assistant integrated with a CRM system used across various business types. Your tasks are as follows:
         
         1. Analyze the lead's history and interaction records in the CRM and generate a short summary about this lead.
@@ -133,31 +121,25 @@ async def create_lead_analysis(file: UploadFile = File(...)):
         ])
 
         # pydantic class for the output
-        class LLMOutput(BaseModel):
+class LLMOutput(BaseModel):
             summary: str = Field(..., description="Summary of the lead's history")
             current_position: str = Field(..., description="Current position of the lead")
             next_best_action: str = Field(..., description="Next best action for the lead")
 
 
         # convert pydantic class to json schema
-        output_json_schema = LLMOutput.model_json_schema()
+output_json_schema = LLMOutput.model_json_schema()
         # make a chat model with structured output
-        chat_model_with_structure = chat_model.with_structured_output(output_json_schema)
+chat_model_with_structure = chat_model.with_structured_output(output_json_schema)
 
         # make a chain
-        chain = prompt_template | chat_model_openai
+chain = prompt_template | chat_model_openai
         
 
         # get the scraped data and pass it to the chain
-        lead_history_content = scrape_lead_history_data(html_content=html_content_decoded)
+lead_history_content = scrape_lead_history_data(html_content=html_content_decoded)
 
-        ai_respose = chain.invoke({"lead_history_content": lead_history_content})
+ai_respose = chain.invoke({"lead_history_content": lead_history_content})
 
-        # print(history_data)
-        return {"history_data": lead_history_content,
-                "ai_response": ai_respose
-                }
-    except:
-        return {
-            "Error": "Error fetching lead analysis data. Please check the API key"
-        }
+print(ai_respose)
+    

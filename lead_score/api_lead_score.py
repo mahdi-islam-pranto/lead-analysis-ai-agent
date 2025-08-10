@@ -10,6 +10,7 @@ app = FastAPI()
 class Item(BaseModel):
     data: dict
     
+    
 @app.post("/leadscore")
 async def root(Item: Item):
 

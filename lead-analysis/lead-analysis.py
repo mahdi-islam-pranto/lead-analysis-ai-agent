@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # get the html contect from lead_page.html file
-with open('lead_page3.html', 'r') as f:
+with open('lead_page2.html', 'r') as f:
     html_content = f.read()
 
 # srape lead history data function
@@ -83,6 +83,9 @@ llm = HuggingFaceEndpoint(
 # define chat model
 chat_model = ChatHuggingFace(llm=llm, verbose=True)
 
+# alternative model
+chat_model_openai = ChatOpenAI(model="gpt-3.5-turbo", temperature=0.2)
+
 # make a prompt template
 prompt_template = ChatPromptTemplate.from_messages([
     ("system", """ You are an AI assistant integrated with a CRM system used across various business types. Your tasks are as follows:
@@ -130,7 +133,7 @@ output_json_schema = LLMOutput.model_json_schema()
 chat_model_with_structure = chat_model.with_structured_output(output_json_schema)
 
 # make a chain
-chain = prompt_template | chat_model
+chain = prompt_template | chat_model_openai
 
 # get the scraped data and pass it to the chain
 lead_history_content = scrape_lead_history_data(html_content)
