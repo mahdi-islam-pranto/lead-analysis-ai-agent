@@ -142,10 +142,10 @@ async def create_lead_analysis(file: UploadFile = File(...)):
         # convert pydantic class to json schema
         output_json_schema = LLMOutput.model_json_schema()
         # make a chat model with structured output
-        chat_model_with_structure = chat_model.with_structured_output(output_json_schema)
+        chat_model_with_structure = chat_model_openai.with_structured_output(output_json_schema)
 
         # make a chain
-        chain = prompt_template | chat_model_openai
+        chain = prompt_template | chat_model_with_structure
         
 
         # get the scraped data and pass it to the chain
