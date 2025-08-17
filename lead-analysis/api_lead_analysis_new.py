@@ -61,6 +61,7 @@ async def create_lead_analysis(lead_data: LeadData):
             summary: str = Field(..., description="Summary of the lead's history")
             current_position: str = Field(..., description="Current position of the lead")
             next_best_action: str = Field(..., description="Next best action for the lead")
+            
     
         # define hf llm 
         llm = HuggingFaceEndpoint(
@@ -160,3 +161,4 @@ async def create_lead_analysis(lead_data: LeadData):
     
     except Exception as e:
         return {"Error": str(e)}
+    
